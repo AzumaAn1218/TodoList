@@ -6,17 +6,15 @@
 //
 
 import SwiftUI
-
-struct ToDoItem {
-    var isChecked: Bool
-    var task: String
-}
+import CoreData
 
 struct TodoListPage: View {
+    @Environment(\.managedObjectContext) private var viewContext
+    @FetchRequest(sortDescriptors: [])
+    private var todoItems: FetchedResults<TodoItem>
+
     @State var newTask: String = ""
-    @State var todoLists: [ToDoItem] = []
     @State var showAlert = false
-    @State var text = ""
     
     // 現在の日付を取得する関数
     func getCurrentDate() -> String {
@@ -28,22 +26,22 @@ struct TodoListPage: View {
     var body: some View {
         VStack {
             Text(getCurrentDate())
-            ForEach(todoLists.indices, id: \.self) { index in
+            ForEach(todoItems) { todoItem in
                 HStack {
                     Button(action: {
-                        todoLists[index].isChecked.toggle()
+                        updateTodoItem(todoItem: todoItem)
                     }, label: {
                         Image(systemName:
-                                todoLists[index].isChecked ? "checkmark.square" : "square"
+                                todoItem.isChecked ? "checkmark.square" : "square"
                         )
                         .imageScale(.large)
                         .foregroundStyle(.pink)
                     })
-                    if todoLists[index].isChecked {
-                        Text(todoLists[index].task)
+                    if todoItem.isChecked {
+                        Text(todoItem.task ?? "")
                             .strikethrough()
                     } else {
-                        Text(todoLists[index].task)
+                        Text(todoItem.task ?? "")
                     }
                 }
                 .padding(.top, 1)
@@ -68,13 +66,36 @@ struct TodoListPage: View {
             Button("キャンセル", action: {})
             Button("追加する", action: {
                 if !newTask.isEmpty {
-                    todoLists.append(
-                        ToDoItem(isChecked: false, task: newTask)
-                    )
+                    addTodoItem(task: newTask)
                     newTask = ""
                 }
             })
         })
+    }
+    
+    private func addTodoItem(task: String) {
+        withAnimation {
+            let newTodoItem = TodoItem(context: viewContext)
+            newTodoItem.isChecked = false
+            newTodoItem.task = task
+            saveContext()
+        }
+    }
+    
+    private func updateTodoItem(todoItem: TodoItem) {
+        withAnimation {
+            todoItem.isChecked.toggle()
+            saveContext()
+        }
+    }
+    
+    private func saveContext() {
+        do {
+            try viewContext.save()
+        } catch {
+            let error = error as NSError
+            fatalError("Unresolved error: \(error)")
+        }
     }
 }
 
