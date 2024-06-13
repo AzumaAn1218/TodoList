@@ -10,7 +10,7 @@ import CoreData
 
 struct TodoListPage: View {
     @Environment(\.managedObjectContext) private var viewContext
-    @FetchRequest(sortDescriptors: [])
+    @FetchRequest(sortDescriptors: [NSSortDescriptor(keyPath: \TodoItem.number, ascending: false)]) // number属性の降順でソートする
     private var todoItems: FetchedResults<TodoItem>
 
     @State var newTask: String = ""
@@ -85,6 +85,7 @@ struct TodoListPage: View {
             newTodoItem.isChecked = false
             newTodoItem.task = task
             newTodoItem.timestamp = Date()
+            newTodoItem.number = Int16(todoItems.first?.number ?? 0) + 1 // number属性に採番する
             saveContext()
         }
     }
@@ -102,10 +103,11 @@ struct TodoListPage: View {
                 let todoItem = todoItems[index]
                 viewContext.delete(todoItem)
             }
+            
             saveContext()
         }
     }
-    
+
     private func saveContext() {
         do {
             try viewContext.save()
