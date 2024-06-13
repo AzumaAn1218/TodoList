@@ -26,27 +26,30 @@ struct TodoListPage: View {
     var body: some View {
         VStack {
             Text(getCurrentDate())
-            ForEach(todoItems) { todoItem in
-                HStack {
-                    Button(action: {
-                        updateTodoItem(todoItem: todoItem)
-                    }, label: {
-                        Image(systemName:
+            List {
+                ForEach(todoItems) { todoItem in
+                    HStack {
+                        Button(action: {
+                            updateTodoItem(todoItem: todoItem)
+                        }, label: {
+                            Image(systemName:
                                 todoItem.isChecked ? "checkmark.square" : "square"
-                        )
-                        .imageScale(.large)
-                        .foregroundStyle(.pink)
-                    })
-                    if todoItem.isChecked {
-                        Text(todoItem.task ?? "")
-                            .strikethrough()
-                    } else {
-                        Text(todoItem.task ?? "")
+                            )
+                            .imageScale(.large)
+                            .foregroundStyle(.pink)
+                        })
+                        if todoItem.isChecked {
+                            Text(todoItem.task ?? "")
+                                .strikethrough()
+                        } else {
+                            Text(todoItem.task ?? "")
+                        }
                     }
+                    .padding(.top, 1)
+                    .padding(.leading, 20)
+                    .frame(maxWidth: .infinity, alignment: .leading)
                 }
-                .padding(.top, 1)
-                .padding(.leading, 20)
-                .frame(maxWidth: .infinity, alignment: .leading)
+                .onDelete(perform: deleteTodoItem)
             }
             
             Spacer()
@@ -71,6 +74,9 @@ struct TodoListPage: View {
                 }
             })
         })
+        .toolbar {
+            EditButton()
+        }
     }
     
     private func addTodoItem(task: String) {
@@ -78,6 +84,7 @@ struct TodoListPage: View {
             let newTodoItem = TodoItem(context: viewContext)
             newTodoItem.isChecked = false
             newTodoItem.task = task
+            newTodoItem.timestamp = Date()
             saveContext()
         }
     }
@@ -85,6 +92,16 @@ struct TodoListPage: View {
     private func updateTodoItem(todoItem: TodoItem) {
         withAnimation {
             todoItem.isChecked.toggle()
+            saveContext()
+        }
+    }
+    
+    private func deleteTodoItem(at offsets: IndexSet) {
+        withAnimation {
+            offsets.forEach { index in
+                let todoItem = todoItems[index]
+                viewContext.delete(todoItem)
+            }
             saveContext()
         }
     }
