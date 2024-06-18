@@ -105,7 +105,7 @@ struct TodoListPage: View {
             newTodoItem.isChecked = false
             newTodoItem.task = task
             newTodoItem.timestamp = Date()
-            newTodoItem.number = Int16(todoItems.first?.number ?? 0) + 1 // number属性に採番する
+            newTodoItem.number = Int16(todoItems.first?.number ?? 0) + 1
             saveContext()
         }
     }
@@ -118,10 +118,16 @@ struct TodoListPage: View {
     }
     
     private func moveTodoItem(from source: IndexSet, to destination: Int) {
-        
+        withAnimation {
+            var tempItems = Array(todoItems)
+            tempItems.move(fromOffsets: source, toOffset: destination)
+            // 並び順を更新する
+            for (index, item) in tempItems.enumerated() {
+                item.number = Int16(index)
+            }
+            saveContext()
+        }
     }
-
-
 
     private func saveContext() {
         do {
