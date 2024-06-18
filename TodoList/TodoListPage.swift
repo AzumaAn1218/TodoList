@@ -14,7 +14,8 @@ struct TodoListPage: View {
     private var todoItems: FetchedResults<TodoItem>
 
     @State var newTask: String = ""
-    @State var showAlert = false
+    @State var addTaskAlert = false
+    @State var deleteTaskAlert = false
     
     // 現在の日付を取得する関数
     func getCurrentDate() -> String {
@@ -49,22 +50,36 @@ struct TodoListPage: View {
                     .padding(.leading, 20)
                     .frame(maxWidth: .infinity, alignment: .leading)
                 }
-                .onDelete(perform: deleteTodoItem)
+                .onMove(perform: moveTodoItem)
+                .deleteDisabled(true)
             }
+            .environment(\.editMode, .constant(.active))
             
             Spacer()
-            Button {
-                showAlert = true
-            } label: {
-                Text("＋")
-                    .font(.title)
-                    .foregroundColor(Color.white)
-                    .frame(width:80, height:80)
-                    .background(Color("bottonColor"))
-                    .clipShape(/*@START_MENU_TOKEN@*/Circle()/*@END_MENU_TOKEN@*/)
+            HStack{
+                Button {
+                    addTaskAlert = true
+                } label: {
+                    Text("＋")
+                        .font(.title)
+                        .foregroundColor(Color.white)
+                        .frame(width:80, height:80)
+                        .background(Color("bottonColor"))
+                        .clipShape(/*@START_MENU_TOKEN@*/Circle()/*@END_MENU_TOKEN@*/)
+                }
+                Button {
+                    deleteTaskAlert = true
+                } label: {
+                    Text("ー")
+                        .font(.title)
+                        .foregroundColor(Color.white)
+                        .frame(width:80, height:80)
+                        .background(Color("bottonColor"))
+                        .clipShape(/*@START_MENU_TOKEN@*/Circle()/*@END_MENU_TOKEN@*/)
+                }
             }
         }
-        .alert("タスクの追加", isPresented: $showAlert, actions: {
+        .alert("タスクの追加", isPresented: $addTaskAlert, actions: {
             TextField("新規タスク", text: $newTask)
             Button("キャンセル", action: {})
             Button("追加する", action: {
@@ -74,9 +89,14 @@ struct TodoListPage: View {
                 }
             })
         })
-        .toolbar {
-            EditButton()
-        }
+        .alert("完了済みタスクを削除する", isPresented: $deleteTaskAlert, actions: {
+            Button("キャンセル", action: {})
+            Button("削除する", action: {
+                let completedTasks = todoItems.filter { $0.isChecked }
+                completedTasks.forEach { viewContext.delete($0) }
+                saveContext()
+            })
+        })
     }
     
     private func addTodoItem(task: String) {
@@ -97,16 +117,11 @@ struct TodoListPage: View {
         }
     }
     
-    private func deleteTodoItem(at offsets: IndexSet) {
-        withAnimation {
-            offsets.forEach { index in
-                let todoItem = todoItems[index]
-                viewContext.delete(todoItem)
-            }
-            
-            saveContext()
-        }
+    private func moveTodoItem(from source: IndexSet, to destination: Int) {
+        
     }
+
+
 
     private func saveContext() {
         do {
